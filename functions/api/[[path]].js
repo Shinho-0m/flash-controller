@@ -1,6 +1,6 @@
 /**
  * Cloudflare Pages Functions - API 处理
- * 直接处理 /api/* 请求，不代理
+ * 直接处理 /api/* 请求
  */
 
 export async function onRequest(context) {
@@ -15,34 +15,44 @@ export async function onRequest(context) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Headers': 'Content-Type',
       },
     });
   }
 
-  // 注册
-  if (pathname === '/api/register' && method === 'POST') {
-    const body = await request.json();
-    return jsonResp({ success: true, userId: 999, mock: true }, 200);
-  }
+  try {
+    const body = method === 'POST' ? await request.json().catch(() => ({})) : {};
 
-  // 登录
-  if (pathname === '/api/login' && method === 'POST') {
-    const body = await request.json();
-    return jsonResp({
-      success: true,
-      user: { id: 1, username: body.username, nickname: body.username, coins: 100, level: 1 }
-    }, 200);
-  }
+    // 注册
+    if (pathname === '/api/register' && method === 'POST') {
+      return jsonResp({ success: true, userId: Date.now() }, 200);
+    }
 
-  // 获取动态
-  if (pathname === '/api/posts' && method === 'GET') {
-    return jsonResp([
-      { id: 1, content: '测试动态', authorName: '测试用户', likes: 0, comments: 0 }
-    ], 200);
-  }
+    // 登录
+    if (pathname === '/api/login' && method === 'POST') {
+      return jsonResp({
+        success: true,
+        user: {
+          id: 1,
+          username: body.username || 'user',
+          nickname: body.username || 'user',
+          coins: 100,
+          level: 1,
+          avatar: '',
+          bio: ''
+        }
+      }, 200);
+    }
 
-  return jsonResp({ error: 'API 不存在' }, 404);
+    // 获取动态列表
+    if (pathname === '/api/posts' && method === 'GET') {
+      return jsonResp([], 200);
+    }
+
+    return jsonResp({ error: 'API 不存在' }, 404);
+  } catch (e) {
+    return jsonResp({ error: '服务器错误：' + e.message }, 500);
+  }
 }
 
 function jsonResp(data, status) {
