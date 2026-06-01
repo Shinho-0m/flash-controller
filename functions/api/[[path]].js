@@ -4,7 +4,7 @@
  */
 
 export async function onRequest(context) {
-  const { request, env } = context;
+  const { request } = context;
   const url = new URL(request.url);
 
   // 只代理 /api/ 开头的请求
@@ -17,20 +17,37 @@ export async function onRequest(context) {
   // 构造目标 URL
   const targetUrl = BACKEND_URL + url.pathname + url.search;
 
-  // 转发请求（保留 method、headers、body）
+  // 转发请求
+  // 注意：不能直接复用 request.headers 对象（是只读的），
+  // 需要逐个复制需要的 header，排除 host/transfer-encoding 等
+  const skipHeaders = new Set([
+    'host', 'transfer-encoding', 'connection',
+    'content-length', 'keep-alive', 'expect',
+    'proxy-authenticate', 'proxy-authorization', 'te', 'trailer', 'upgrade',
+  ]);
+  // cf- 开头的 header 也不能传，需要过滤
+  const newHeaders = new Headers();
+  for (const [key, val] of request.headers.entries()) {
+    if (skipHeaders.has(key.toLowerCase()) || key.toLowerCase().startsWith('cf-')) {
+      continue;
+    }
+    newHeaders.set(key, val);
+  }
+
+  const body = (request.method !== 'GET' && request.method !== 'HEAD')
+    ? request.body
+    : undefined;
+
   const newRequest = new Request(targetUrl, {
     method: request.method,
-    headers: request.headers,
-    body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
+    headers: newHeaders,
+    body: body,
     redirect: 'manual',
   });
 
-  // 删除可能引起问题的 headers（不能用模糊匹配，只能逐个删）
-  newRequest.headers.delete('host');
-
   try {
     const response = await fetch(newRequest);
-    // 处理 CORS
+    // 透传后端响应，补上 CORS header
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
