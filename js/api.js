@@ -4,8 +4,8 @@
  */
 
 const API = {
-  // Worker 后端地址（部署后替换为真实地址）
-  BASE: 'https://flash-controller-api.c4d6c2ae4af1cefede0c645cb18af7e1.workers.dev',
+  // 使用相对路径，通过 Pages Functions 代理转发到后端 Worker
+  BASE: '',
 
   /**
    * 通用 fetch 封装
