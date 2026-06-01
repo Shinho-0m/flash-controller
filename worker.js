@@ -38,7 +38,7 @@ export default {
         const result = await DB.prepare('INSERT INTO users (username, password, email) VALUES (?, ?, ?)').bind(username, password, useEmail).run();
         const userId = result.meta.last_row_id;
         // 初始化用户游戏数据
-        await DB.prepare('INSERT INTO user_stats (user_id, nickname, coins, level, exp) VALUES (?, ?, 100, 1, 0)').bind(userId, username).run();
+        await DB.prepare('INSERT INTO user_stats (user_id, nickname, coins) VALUES (?, ?, 100)').bind(userId, username).run();
         return jsonResp({ success: true, userId }, 200, corsHeaders);
       }
 

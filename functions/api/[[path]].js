@@ -25,9 +25,8 @@ export async function onRequest(context) {
     redirect: 'manual',
   });
 
-  // 删除可引起问题的 headers
+  // 删除可能引起问题的 headers（不能用模糊匹配，只能逐个删）
   newRequest.headers.delete('host');
-  newRequest.headers.delete('cf-');
 
   try {
     const response = await fetch(newRequest);
