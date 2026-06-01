@@ -297,6 +297,8 @@ const App = {
   },
 
   // ===== 页面导航 =====
+  _skipHistory: false,  // 返回时不推入历史
+
   navigateTo(page, data) {
     const pages = document.querySelectorAll('.page');
     let target = document.getElementById('page-' + page);
@@ -311,11 +313,12 @@ const App = {
 
     if (!target) return;
 
-    // 记录历史
-    if (this.currentPage !== page) {
+    // 记录历史（返回导航时跳过）
+    if (!this._skipHistory && this.currentPage !== page) {
       this.previousPage = this.currentPage;
       this.pageHistory.push(this.currentPage);
     }
+    this._skipHistory = false;  // 重置标志
 
     // 隐藏所有页面
     pages.forEach(p => {
@@ -352,6 +355,7 @@ const App = {
     const alwaysBackToProfile = ['settings', 'edit-profile'];
     if (alwaysBackToProfile.includes(this.currentPage)) {
       this.pageHistory = [];
+      this._skipHistory = true;
       this.navigateTo('profile');
       return;
     }
@@ -361,14 +365,17 @@ const App = {
       // 防止循环：如果上一页就是当前页，继续往前找
       if (prev === this.currentPage && this.pageHistory.length > 0) {
         const prevPrev = this.pageHistory.pop();
+        this._skipHistory = true;
         this.navigateTo(prevPrev);
       } else {
+        this._skipHistory = true;
         this.navigateTo(prev);
       }
     } else {
       // 默认返回个人页或首页
       const mainPages = ['home', 'control', 'discover', 'chat', 'profile', 'training'];
       if (mainPages.includes(this.currentPage)) return;
+      this._skipHistory = true;
       this.navigateTo('profile');
     }
   },
@@ -377,6 +384,7 @@ const App = {
   switchTab(tabEl) {
     const page = tabEl.dataset.page;
     this.pageHistory = [];
+    this._skipHistory = true;
     this.navigateTo(page);
   },
 

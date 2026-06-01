@@ -4,7 +4,7 @@
  */
 
 const API = {
-  // 使用相对路径，通过 Pages Functions 代理转发到后端 Worker
+  // 相对路径：/api/* 由 Cloudflare 路由直接转发到 Worker（已配置 pages.dev/api/* 路由）
   BASE: '',
 
   /**

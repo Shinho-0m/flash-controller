@@ -31,7 +31,7 @@ export async function onRequest(context) {
     const body = await request.json();
     return jsonResp({
       success: true,
-      user: { id: 1, username: body.username, nickname: '测试', coins: 100, level: 1 }
+      user: { id: 1, username: body.username, nickname: body.username, coins: 100, level: 1 }
     }, 200);
   }
 
