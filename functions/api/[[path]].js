@@ -102,7 +102,10 @@ export async function onRequest(context) {
 
     // 点赞 / 取消点赞
     if (pathname === '/api/posts/like' && method === 'POST') {
-      const { post_id, user_id } = await request.json();
+      const body = await request.json();
+      const post_id = body.post_id || body.postId;
+      const user_id = body.user_id || body.userId;
+      if (!post_id || !user_id) return jsonResp({ error: '缺少参数' }, 400, corsHeaders);
       const existing = await DB.prepare('SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?').bind(post_id, user_id).first();
       if (existing) {
         await DB.prepare('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?').bind(post_id, user_id).run();
@@ -117,7 +120,7 @@ export async function onRequest(context) {
 
     // 获取评论
     if (pathname === '/api/comments' && method === 'GET') {
-      const postId = url.searchParams.get('post_id');
+      const postId = url.searchParams.get('post_id') || url.searchParams.get('postId');
       const comments = await DB.prepare(`
         SELECT comments.*, users.username as authorName, user_stats.avatar as authorAvatar
         FROM comments
@@ -130,7 +133,11 @@ export async function onRequest(context) {
 
     // 发表评论
     if (pathname === '/api/comments' && method === 'POST') {
-      const { post_id, user_id, content } = await request.json();
+      const body = await request.json();
+      const post_id = body.post_id || body.postId;
+      const user_id = body.user_id || body.userId;
+      const content = body.content;
+      if (!post_id || !user_id || !content) return jsonResp({ error: '缺少参数' }, 400, corsHeaders);
       const result = await DB.prepare('INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)').bind(post_id, user_id, content).run();
       await DB.prepare('UPDATE posts SET comments = comments + 1 WHERE id = ?').bind(post_id).run();
       return jsonResp({ success: true, commentId: result.meta.last_row_id }, 200, corsHeaders);
@@ -153,7 +160,7 @@ export async function onRequest(context) {
     // ==================== 商城系统 ====================
 
     if (pathname === '/api/shop' && method === 'GET') {
-      const items = await DB.prepare('SELECT * FROM shop_items WHERE available = 1').all();
+      const items = await DB.prepare('SELECT * FROM shop_items').all();
       return jsonResp(items.results || [], 200, corsHeaders);
     }
 
@@ -175,7 +182,7 @@ export async function onRequest(context) {
     // ==================== 任务系统 ====================
 
     if (pathname === '/api/tasks' && method === 'GET') {
-      const tasks = await DB.prepare('SELECT * FROM tasks WHERE available = 1').all();
+      const tasks = await DB.prepare('SELECT * FROM tasks').all();
       return jsonResp(tasks.results || [], 200, corsHeaders);
     }
 
