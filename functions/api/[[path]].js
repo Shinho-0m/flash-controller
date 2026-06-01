@@ -1,65 +1,51 @@
 /**
- * Cloudflare Pages Functions - API 代理
- * 把所有 /api/* 请求转发到后端 Worker
+ * Cloudflare Pages Functions - /api/* 代理到后端 Worker
+ * 标准写法：直接把原始 Request 转发到后端
  */
 
 export async function onRequest(context) {
-  const { request } = context;
-  const url = new URL(request.url);
+  var request = context.request;
+  var url = new URL(request.url);
 
-  // 只代理 /api/ 开头的请求
-  if (!url.pathname.startsWith('/api/')) {
+  // 非 /api/ 路径，跳过
+  if (url.pathname.indexOf('/api/') !== 0) {
     return context.next();
   }
 
-  const BACKEND_URL = 'https://flash-controller-api.c4d6c2ae4af1cefede0c645cb18af7e1.workers.dev';
+  var UPSTREAM = 'https://flash-controller-api.c4d6c2ae4af1cefede0c645cb18af7e1.workers.dev';
+  var targetUrl = UPSTREAM + url.pathname + url.search;
 
-  // 构造目标 URL
-  const targetUrl = BACKEND_URL + url.pathname + url.search;
-
-  // 转发请求
-  // 注意：不能直接复用 request.headers 对象（是只读的），
-  // 需要逐个复制需要的 header，排除 host/transfer-encoding 等
-  const skipHeaders = new Set([
-    'host', 'transfer-encoding', 'connection',
-    'content-length', 'keep-alive', 'expect',
-    'proxy-authenticate', 'proxy-authorization', 'te', 'trailer', 'upgrade',
-  ]);
-  // cf- 开头的 header 也不能传，需要过滤
-  const newHeaders = new Headers();
-  for (const [key, val] of request.headers.entries()) {
-    if (skipHeaders.has(key.toLowerCase()) || key.toLowerCase().startsWith('cf-')) {
-      continue;
-    }
-    newHeaders.set(key, val);
-  }
-
-  const body = (request.method !== 'GET' && request.method !== 'HEAD')
-    ? request.body
-    : undefined;
-
-  const newRequest = new Request(targetUrl, {
+  // ✅ 关键：用原始 request 构造新 Request，Cloudflare 会自动处理 headers
+  // 不手动操作 headers，避免只读 header 异常
+  var upstreamRequest = new Request(targetUrl, {
     method: request.method,
-    headers: newHeaders,
-    body: body,
+    headers: request.headers,
+    body: (request.method !== 'GET' && request.method !== 'HEAD') ? request.body : undefined,
     redirect: 'manual',
+    // 保留原始请求的 mode、credentials 等
   });
 
   try {
-    const response = await fetch(newRequest);
-    // 透传后端响应，补上 CORS header
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    var resp = await fetch(upstreamRequest);
+
+    // 透传响应，补充 CORS
+    var respOpts = {
+      status: resp.status,
+      statusText: resp.statusText,
+      headers: resp.headers,
     };
-    const newResp = new Response(response.body, response);
-    Object.entries(corsHeaders).forEach(([k, v]) => newResp.headers.set(k, v));
-    return newResp;
+    var corsResp = new Response(resp.body, respOpts);
+
+    // 设 CORS（允许前端直接从 pages.dev 调用）
+    corsResp.headers.set('Access-Control-Allow-Origin', '*');
+    corsResp.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    corsResp.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    return corsResp;
   } catch (err) {
-    return new Response(JSON.stringify({ error: 'Backend unreachable: ' + err.message }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: 'Backend unreachable', message: err.message }),
+      { status: 502, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }
