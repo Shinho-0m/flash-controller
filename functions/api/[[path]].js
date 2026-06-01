@@ -12,17 +12,6 @@ export async function onRequest(context) {
   const pathname = url.pathname;
   const method = request.method;
 
-  // 🔍 调试接口：查看 env 里有什么
-  if (pathname === '/api/debug-env') {
-    return new Response(JSON.stringify({
-      envKeys: Object.keys(env),
-      hasDB: !!env.DB,
-      DB_type: typeof env.DB,
-    }), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-    });
-  }
-
   // CORS 预检
   if (method === 'OPTIONS') {
     return new Response(null, {
@@ -210,7 +199,7 @@ function jsonResp(data, status, corsHeaders) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
       ...corsHeaders,
     },
   });
