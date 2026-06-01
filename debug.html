@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>调试面板</title>
+<style>
+  body { background:#0a0a0f; color:#d4af37; font-family:monospace; padding:20px; }
+  h2 { color:#fff; border-bottom:1px solid #333; padding-bottom:5px; }
+  pre { background:#111; padding:10px; border-radius:4px; overflow-x:auto; font-size:12px; color:#0f0; }
+  .error { color:#f44; }
+  .ok { color:#4f4; }
+  button { background:#d4af37; color:#000; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-weight:bold; margin:5px; }
+  button:hover { background:#f0d060; }
+</style>
+</head>
+<body>
+<h1>🔍 闪霍控制器调试面板</h1>
+<button onclick="location.href='index.html'">回到首页</button>
+<button onclick="runDiagnostics()">重新诊断</button>
+<button onclick="clearAll()">清除所有数据</button>
+
+<h2>1. localStorage 状态</h2>
+<pre id="ls-state"></pre>
+
+<h2>2. Auth.getCurrentUser() 结果</h2>
+<pre id="auth-user"></pre>
+
+<h2>3. Data.load('user') 结果</h2>
+<pre id="data-user"></pre>
+
+<h2>4. AppData.load('user') 结果</h2>
+<pre id="appdata-user"></pre>
+
+<h2>5. AppData.load('user', AppData.defaultUser) 结果</h2>
+<pre id="appdata-user-fb"></pre>
+
+<h2>6. 各模块 render 测试</h2>
+<pre id="render-test"></pre>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/control.js"></script>
+<script src="js/social.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/tasks.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/training.js"></script>
+
+<script>
+function runDiagnostics() {
+  // 1. localStorage
+  const lsState = document.getElementById('ls-state');
+  let lsText = '';
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('fc_')) {
+      const val = localStorage.getItem(key);
+      lsText += key + ': ' + val.substring(0, 200) + (val.length > 200 ? '...' : '') + '\n\n';
+    }
+  }
+  lsState.textContent = lsText || '(无数据)';
+
+  // 2. Auth.getCurrentUser()
+  const authUser = document.getElementById('auth-user');
+  try {
+    const u = Auth.getCurrentUser();
+    authUser.innerHTML = JSON.stringify(u, null, 2);
+    if (!u || !u.username) authUser.innerHTML += '\n<span class="error">⚠️ getCurrentUser 返回无效用户!</span>';
+  } catch(e) {
+    authUser.innerHTML = '<span class="error">ERROR: ' + e.message + '</span>';
+  }
+
+  // 3. Data.load('user')
+  const dataUser = document.getElementById('data-user');
+  try {
+    const u = Data.load('user');
+    dataUser.innerHTML = JSON.stringify(u, null, 2);
+    if (!u || !u.username) dataUser.innerHTML += '\n<span class="error">⚠️ Data.load 返回无效用户!</span>';
+  } catch(e) {
+    dataUser.innerHTML = '<span class="error">ERROR: ' + e.message + '</span>';
+  }
+
+  // 4. AppData.load('user')
+  const appdataUser = document.getElementById('appdata-user');
+  try {
+    const u = AppData.load('user');
+    appdataUser.innerHTML = JSON.stringify(u, null, 2);
+  } catch(e) {
+    appdataUser.innerHTML = '<span class="error">ERROR: ' + e.message + '</span>';
+  }
+
+  // 5. AppData.load('user', AppData.defaultUser)
+  const appdataUserFb = document.getElementById('appdata-user-fb');
+  try {
+    const u = AppData.load('user', AppData.defaultUser);
+    appdataUserFb.innerHTML = JSON.stringify(u, null, 2);
+  } catch(e) {
+    appdataUserFb.innerHTML = '<span class="error">ERROR: ' + e.message + '</span>';
+  }
+
+  // 6. 各模块 render
+  const renderTest = document.getElementById('render-test');
+  let renderText = '';
+
+  // ⚡ 深度诊断：逐个检查每个关键数据
+  const keys = ['user', 'tasks', 'achievements', 'chatContacts', 'notifications', 'discoverUsers', 'posts', 'shopItems', 'devices', 'controlHistory', 'initialized'];
+  for (const k of keys) {
+    const raw = localStorage.getItem('fc_' + k);
+    const parsed = raw ? (() => { try { return JSON.parse(raw); } catch(e) { return 'PARSE_ERROR: ' + e.message; } })() : null;
+    renderText += 'fc_' + k + ': raw_type=' + (raw === null ? 'NULL' : typeof raw) + ', parsed_type=' + (parsed === null ? 'NULL' : Array.isArray(parsed) ? 'Array[' + parsed.length + ']' : typeof parsed) + ', isArray=' + Array.isArray(parsed);
+    if (k === 'user' && parsed && typeof parsed === 'object') {
+      renderText += ' {id:' + parsed.id + ', nickname:' + parsed.nickname + ', username:' + parsed.username + ', avatar:' + parsed.avatar + '}';
+    }
+    renderText += '\n';
+  }
+  renderText += '\n--- Render Tests ---\n';
+
+  const modules = [
+    ['Profile.render()', () => Profile.render()],
+    ['Settings.render()', () => Settings.render()],
+    ['Social.renderHome()', () => Social.renderHome()],
+    ['Discover.render()', () => Discover.render()],
+    ['Chat.render()', () => Chat.render()],
+    ['Tasks.render()', () => Tasks.render()],
+    ['Shop.render()', () => Shop.render()],
+    ['AICenter.render()', () => AICenter.render()],
+    ['ControlPanel.render()', () => ControlPanel.render()],
+    ['Training.render()', () => Training.render()],
+  ];
+
+  for (const [name, fn] of modules) {
+    try {
+      const result = fn();
+      const hasUndefined = (typeof result === 'string' && /\bundefined\b/i.test(result));
+      renderText += name + ': ' + (hasUndefined ? '<span class="error">包含 "undefined"!</span>' : '<span class="ok">OK</span>') + '\n';
+      if (hasUndefined) {
+        // 提取包含 undefined 的行
+        const lines = result.split('\n');
+        for (const line of lines) {
+          if (/\bundefined\b/i.test(line)) {
+            renderText += '  → ' + line.trim().substring(0, 200) + '\n';
+          }
+        }
+      }
+    } catch(e) {
+      renderText += name + ': <span class="error">EXCEPTION: ' + e.message + '\n' + (e.stack ? e.stack.split('\n').slice(0,3).join('\n') : '') + '</span>\n';
+    }
+  }
+
+  // 额外：模拟完整导航流程
+  renderText += '\n--- Simulated Navigation ---\n';
+  const simPages = ['home', 'profile', 'tasks', 'shop', 'discover', 'control', 'training'];
+  for (const p of simPages) {
+    try {
+      App.renderPageContent(p, null);
+      const pageEl = document.getElementById('page-' + p);
+      if (pageEl) {
+        const html = pageEl.innerHTML;
+        const hasUndef = /\bundefined\b/i.test(html);
+        if (hasUndef) {
+          // 找出包含 undefined 的具体片段
+          const matches = html.match(/undefined[^<]{0,50}/gi);
+          renderText += 'navigateTo(' + p + '): <span class="error">PAGE HAS "undefined"!</span>\n';
+          if (matches) {
+            for (const m of matches.slice(0, 5)) {
+              renderText += '  → ...' + m + '...\n';
+            }
+          }
+        } else {
+          renderText += 'navigateTo(' + p + '): <span class="ok">OK</span>\n';
+        }
+      } else {
+        renderText += 'navigateTo(' + p + '): <span class="error">PAGE NOT FOUND!</span>\n';
+      }
+    } catch(e) {
+      renderText += 'navigateTo(' + p + '): <span class="error">EXCEPTION: ' + e.message + '</span>\n';
+    }
+  }
+
+  // 单独测试 chat（因为它会替换整个 page-chat）
+  try {
+    const chatPage = document.getElementById('page-chat');
+    if (chatPage) {
+      chatPage.innerHTML = Chat.render();
+      const html = chatPage.innerHTML;
+      const hasUndef = /\bundefined\b/i.test(html);
+      renderText += '\nchat (full replace): ' + (hasUndef ? '<span class="error">HAS "undefined"!</span>' : '<span class="ok">OK</span>') + '\n';
+      if (hasUndef) {
+        const matches = html.match(/undefined[^<]{0,80}/gi);
+        if (matches) for (const m of matches.slice(0, 5)) renderText += '  → ...' + m + '...\n';
+      }
+    }
+  } catch(e) {
+    renderText += '\nchat (full replace): <span class="error">EXCEPTION: ' + e.message + '</span>\n';
+  }
+
+  // 🔬 深度检测：遍历所有 page-* div 查找 "undefined" 文本节点
+  renderText += '\n--- DOM "undefined" Scan ---\n';
+  const allPages = document.querySelectorAll('[id^="page-"]');
+  let foundAny = false;
+  for (const page of allPages) {
+    const text = page.textContent || '';
+    if (/\bundefined\b/i.test(text)) {
+      foundAny = true;
+      // 找具体位置
+      const idx = text.toLowerCase().indexOf('undefined');
+      const snippet = text.substring(Math.max(0, idx - 30), idx + 50);
+      renderText += page.id + ': contains "undefined" near: "' + snippet.replace(/\n/g, ' ') + '"\n';
+    }
+  }
+  if (!foundAny) renderText += 'No "undefined" found in any page DOM.\n';
+
+  renderTest.innerHTML = renderText;
+}
+
+function clearAll() {
+  if (confirm('确定要清除所有闪霍控制器数据吗？')) {
+    Object.keys(localStorage).forEach(k => { if (k.startsWith('fc_')) localStorage.removeItem(k); });
+    alert('已清除！刷新页面后重新注册。');
+    runDiagnostics();
+  }
+}
+
+runDiagnostics();
+</script>
+</body>
+</html>

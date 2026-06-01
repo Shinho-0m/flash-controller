@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>滚动问题诊断</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #111; color: #fff; font-family: sans-serif; }
+
+#app {
+  width: 100%; max-width: 480px; margin: 0 auto;
+  min-height: 100vh; position: relative;
+  background: #0a0a0f;
+}
+
+.page {
+  position: absolute; top: 0; left: 0; width: 100%;
+  min-height: 100vh; padding-bottom: 80px;
+  opacity: 0; visibility: hidden;
+  transform: translateX(30px);
+  transition: all 0.35s ease;
+  overflow-y: auto;
+}
+
+.page.active {
+  opacity: 1; visibility: visible;
+  transform: translateX(0);
+  position: relative;
+}
+
+.header {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(10,10,15,0.9); z-index: 50;
+  color: #d4af37; font-weight: bold;
+}
+
+.page-content {
+  padding: 16px; padding-top: 72px;
+}
+
+.item { background: #1a1a2e; margin: 8px 0; padding: 20px; border-radius: 8px; }
+
+.tabbar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; height: 60px;
+  display: flex; background: rgba(10,10,15,0.9); z-index: 50;
+}
+.tab-item { flex: 1; display: flex; align-items: center; justify-content: center; color: #666; cursor: pointer; }
+.tab-item.active { color: #d4af37; }
+
+.diag { position: fixed; bottom: 70px; right: 10px; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 4px; font-size: 11px; z-index: 999; max-width: 300px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- splash -->
+  <div id="page-splash" class="page active">
+    <div class="header">首页</div>
+    <div class="page-content">
+      <div class="item">欢迎</div>
+      <button onclick="navigate('home')" style="margin:16px;padding:12px 24px;">进入首页</button>
+    </div>
+  </div>
+
+  <!-- home -->
+  <div id="page-home" class="page">
+    <div class="header">首页</div>
+    <div class="page-content">
+      <div class="item">帖子 1</div>
+      <div class="item">帖子 2</div>
+      <div class="item">帖子 3</div>
+      <div class="item">帖子 4</div>
+      <div class="item">帖子 5</div>
+      <div class="item">帖子 6</div>
+      <div class="item">帖子 7</div>
+      <div class="item">帖子 8</div>
+      <div class="item">帖子 9</div>
+      <div class="item">帖子 10</div>
+    </div>
+  </div>
+
+  <!-- control -->
+  <div id="page-control" class="page">
+    <div class="header">控制面板</div>
+    <div class="page-content">
+      <div class="item">控制项 1</div>
+      <div class="item">控制项 2</div>
+      <div class="item">控制项 3</div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab-item active" data-page="home" onclick="navigate('home')">🏠 首页</div>
+    <div class="tab-item" data-page="control" onclick="navigate('control')">🎛️ 控制</div>
+  </div>
+
+  <div class="diag" id="diag"></div>
+</div>
+
+<script>
+function navigate(page) {
+  const pages = document.querySelectorAll('.page');
+  const target = document.getElementById('page-' + page);
+  if (!target) return;
+
+  pages.forEach(p => p.classList.remove('active'));
+  target.classList.add('active');
+
+  // 重置所有滚动
+  window.scrollTo(0, 0);
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+  const app = document.getElementById('app');
+  if (app) app.scrollTop = 0;
+  document.querySelectorAll('.page').forEach(p => p.scrollTop = 0);
+
+  // 诊断信息
+  setTimeout(() => {
+    const d = document.getElementById('diag');
+    d.innerHTML = `
+      body.scrollTop=${document.body.scrollTop}<br>
+      html.scrollTop=${document.documentElement.scrollTop}<br>
+      app.scrollTop=${app.scrollTop}<br>
+      target.scrollTop=${target.scrollTop}<br>
+      target.offsetTop=${target.offsetTop}<br>
+      target.getBoundingClientRect().top=${target.getBoundingClientRect().top.toFixed(0)}<br>
+      page-content.top=${target.querySelector('.page-content')?.getBoundingClientRect().top.toFixed(0)}
+    `;
+  }, 100);
+}
+</script>
+
+</body>
+</html>

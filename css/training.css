@@ -1,0 +1,405 @@
+/* ============================================
+   闪霍控制器 - 训练/玩法 模块样式
+   暗黑奢华主题
+   ============================================ */
+
+/* ===== 训练主页面布局 ===== */
+.training-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===== 导航标签（计时 / 图表切换）===== */
+.training-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(10, 10, 15, 0.95);
+  border-bottom:1px solid rgba(212, 175, 55, 0.1);
+}
+
+.training-nav-btn {
+  padding: 12px 28px;
+  font-size: 15px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  color: #aaa;
+  background: linear-gradient(145deg, rgba(30, 30, 40, 0.8), rgba(15, 15, 22, 0.9));
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.training-nav-btn.active {
+  color: #d4af37;
+  border-color: #d4af37;
+  background: linear-gradient(145deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05));
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.15);
+}
+
+/* ===== 视图容器 ===== */
+.training-view {
+  display: none !important;
+  flex:1;
+  overflow-y: auto;
+}
+
+.training-view.active {
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* ===== 计时器区域 ===== */
+.timer-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  min-height: 50vh;
+}
+
+/* 时间显示 */
+.timer-display {
+  font-size: 64px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: #d4af37;
+  text-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+  letter-spacing: 4px;
+  margin-bottom: 32px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 大按钮 - 开始/暂停 */
+.timer-big-btn {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  color: #f5f5f5;
+  background: linear-gradient(145deg, #d4af37, #a08525, #7a631c);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(212, 175, 55, 0.2),
+    inset 0 2px 8px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  font-family: inherit;
+  letter-spacing: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.timer-big-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.timer-big-btn:hover::before {
+  opacity: 1;
+}
+
+.timer-big-btn:active {
+  transform: scale(0.96);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(212, 175, 55, 0.3),
+    inset 0 2px 8px rgba(255, 255, 255, 0.2);
+}
+
+.timer-big-btn.running {
+  background: linear-gradient(145deg, #b8860b, #8b6914, #5c4a10);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.25); }
+  50% { box-shadow: 0 0 60px rgba(212, 175, 55, 0.45); }
+}
+
+/* 操作按钮行（保存 / 清除） */
+.timer-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.timer-action-btn {
+  padding: 14px 36px;
+  font-size: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  color: #ccc;
+  background: linear-gradient(145deg, rgba(35, 35, 45, 0.9), rgba(18, 18, 26, 0.95));
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.timer-action-btn:hover {
+  border-color: #d4af37;
+  color: #d4af37;
+  background: linear-gradient(145deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.03));
+}
+
+.timer-action-btn:active {
+  transform: scale(0.97);
+}
+
+.timer-action-btn.primary {
+  color: #d4af37;
+  border-color: rgba(212, 175, 55, 0.5);
+  background: linear-gradient(145deg, rgba(212, 175, 55, 0.12), rgba(212, 175, 55, 0.04));
+}
+
+/* ===== 视频区域 ===== */
+.video-section {
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 30vh;
+}
+
+.video-wrapper {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.video-wrapper video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.video-file-input {
+  margin-top: 12px;
+  padding: 10px 20px;
+  font-size: 13px;
+  color: #888;
+  border: 1px dashed rgba(212, 175, 55, 0.25);
+  border-radius: 10px;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.video-file-input:hover {
+  border-color: rgba(212, 175, 55, 0.5);
+  color: #d4af37;
+}
+
+/* ===== 图表页面 ===== */
+.chart-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  min-height: calc(100vh - 120px);
+}
+
+.chart-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  border-radius: 12px;
+  background: #111118;
+  padding: 8px;
+  touch-action: auto;
+  cursor: grab;
+}
+
+.chart-wrapper:active {
+  cursor: grabbing;
+}
+
+.chart-canvas {
+  width: 2600px;
+  height: 1000px;
+  display: block;
+  background: #1a1a22;
+  border-radius: 8px;
+}
+
+/* 图表区域滚动条（覆盖全局隐藏规则） */
+.chart-wrapper::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.chart-wrapper::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 3px;
+}
+
+.chart-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.35);
+  border-radius: 3px;
+}
+
+.chart-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.55);
+}
+
+/* 拖动提示条 */
+.chart-scroll-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #555;
+  animation: hint-fade 3s ease forwards;
+}
+
+.chart-scroll-hint span {
+  font-size: 16px;
+  opacity: 0.5;
+}
+
+@keyframes hint-fade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+/* 图表控制栏 */
+.chart-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(20, 20, 28, 0.9);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chart-controls button {
+  padding: 10px 20px;
+  font-size: 14px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 10px;
+  cursor: pointer;
+  color: #ccc;
+  background: linear-gradient(145deg, rgba(35, 35, 45, 0.9), rgba(18, 18, 26, 0.95));
+  transition: all 0.3s;
+  font-family: inherit;
+}
+
+.chart-controls button:hover {
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+.chart-controls button:active {
+  transform: scale(0.95);
+}
+
+.chart-month-label {
+  color: #d4af37;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 0 8px;
+  min-width: 90px;
+  text-align: center;
+}
+
+.chart-controls .chart-export-btn {
+  color: #d4af37;
+  border-color: rgba(212, 175, 55, 0.45);
+  background: linear-gradient(145deg, rgba(212, 175, 55, 0.12), rgba(212, 175, 55, 0.04));
+}
+
+/* 空状态 */
+.training-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.training-empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.training-empty-text {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.training-empty-hint {
+  font-size: 13px;
+  color: #444;
+}
+
+/* ===== 响应式适配 ===== */
+@media (max-width: 380px) {
+  .timer-display {
+    font-size: 48px;
+  }
+
+  .timer-big-btn {
+    width: 140px;
+    height: 140px;
+    font-size: 18px;
+  }
+
+  .timer-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .timer-action-btn {
+    text-align: center;
+  }
+}
+
+@media (max-height: 650px) {
+  .timer-section {
+    min-height: 40vh;
+    padding: 12px;
+  }
+
+  .timer-display {
+    font-size: 48px;
+    margin-bottom: 20px;
+  }
+
+  .timer-big-btn {
+    width: 140px;
+    height: 140px;
+    font-size: 18px;
+  }
+}

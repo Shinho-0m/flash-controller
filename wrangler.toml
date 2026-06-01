@@ -1,0 +1,8 @@
+name = "flash-controller-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "flash-controller-db"
+database_id = "86b6f3cf-d286-4057-b26b-86e2a5c0ec7c"

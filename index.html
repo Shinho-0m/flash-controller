@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="闪霍控制器">
+  <meta name="description" content="闪霍控制器 - 你的专属虚拟控制中心">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- 主样式 -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- 训练模块样式 -->
+  <link rel="stylesheet" href="css/training.css">
+
+  <title>闪霍控制器</title>
+
+  <style>
+    /* 加载动画 */
+    .app-loading {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #0a0a0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      transition: opacity 0.5s ease;
+    }
+    .app-loading.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .loading-spinner {
+      width: 50px; height: 50px;
+      border: 3px solid rgba(212,175,55,0.2);
+      border-top-color: #d4af37;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 防止 iOS 橡皮筋效果 */
+    html, body {
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+    }
+  </style>
+</head>
+<body>
+  <!-- 加载中 -->
+  <div class="app-loading" id="appLoading">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- 应用根容器 -->
+  <div id="app"></div>
+
+  <!-- JS 文件加载顺序很重要 -->
+  <!-- 1. 数据层 -->
+  <script src="js/data.js"></script>
+  <!-- 2. 应用核心（路由、页面管理） -->
+  <script src="js/app.js"></script>
+  <!-- 3. 认证模块 -->
+  <script src="js/auth.js"></script>
+  <!-- 4. 个人主页/设置 -->
+  <script src="js/profile.js"></script>
+  <!-- 5. 控制面板 -->
+  <script src="js/control.js"></script>
+  <!-- 6. 社区动态 -->
+  <script src="js/social.js"></script>
+  <!-- 7. AI 角色系统 -->
+  <script src="js/ai.js"></script>
+  <!-- 8. 任务系统 -->
+  <script src="js/tasks.js"></script>
+  <!-- 9. 商城 -->
+  <script src="js/shop.js"></script>
+  <!-- 10. 聊天模块 -->
+  <script src="js/chat.js"></script>
+  <!-- 11. 训练/玩法模块 -->
+  <script src="js/training.js"></script>
+
+  <!-- 启动应用 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 🔧 仅首次清除旧数据（通过标记控制）
+      var NEED_CLEAR = true; // 设为 false 可跳过清除
+      if (NEED_CLEAR) {
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf('fc_') === 0) keysToRemove.push(k);
+        }
+        keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+        console.log('[闪霍] 已清除 ' + keysToRemove.length + ' 条旧数据，强制登录门禁');
+        // 清除后设置标记，下次不再清除
+        localStorage.setItem('fc_cleaned', 'true');
+      }
+
+      // 初始化数据
+      Data.initAll();
+
+      // 启动应用
+      App.init();
+
+      // 移除加载动画
+      setTimeout(function() {
+        var loading = document.getElementById('appLoading');
+        if (loading) {
+          loading.classList.add('fade-out');
+          setTimeout(function() { loading.remove(); }, 500);
+        }
+      }, 800);
+
+      // 🔍 诊断：导航后检查 DOM + 滚动位置
+      var origNavigate = App.navigateTo;
+      App.navigateTo = function(page, data) {
+        origNavigate.call(this, page, data);
+        // 延迟检查 DOM（等渲染完成）
+        setTimeout(function() {
+          var appEl = document.getElementById('app');
+          var target = document.getElementById('page-' + page);
+          var rect = target ? target.getBoundingClientRect() : null;
+          
+          console.log('[DIAG] === navigateTo: ' + page + ' ===');
+          console.log('[DIAG] body.scrollTop=' + document.body.scrollTop + ' html.scrollTop=' + document.documentElement.scrollTop);
+          console.log('[DIAG] app.scrollTop=' + (appEl ? appEl.scrollTop : 'null') + ' app.offsetTop=' + (appEl ? appEl.offsetTop : 'null'));
+          console.log('[DIAG] target.page# scrollTop=' + (target ? target.scrollTop : 'null'));
+          console.log('[DIAG] target.page# offsetTop=' + (target ? target.offsetTop : 'null'));
+          console.log('[DIAG] target.page# offsetHeight=' + (target ? target.offsetHeight : 'null'));
+          console.log('[DIAG] target rect: top=' + (rect ? rect.top.toFixed(0) : 'null') + ' bottom=' + (rect ? rect.bottom.toFixed(0) : 'null') + ' height=' + (rect ? rect.height.toFixed(0) : 'null'));
+          console.log('[DIAG] window.innerHeight=' + window.innerHeight + ' viewport bottom=' + window.innerHeight);
+          if (rect && rect.top > window.innerHeight) {
+            console.warn('[DIAG] ⚠️ PAGE IS BELOW VIEWPORT! rect.top=' + rect.top + ' > viewport=' + window.innerHeight);
+          }
+          // 检查 header 位置
+          var header = target ? target.querySelector('.header') : null;
+          if (header) {
+            var hr = header.getBoundingClientRect();
+            console.log('[DIAG] header rect: top=' + hr.top.toFixed(0) + ' bottom=' + hr.bottom.toFixed(0));
+          }
+          // 检查 page-content 位置
+          var pc = target ? target.querySelector('.page-content') : null;
+          if (pc) {
+            var pcr = pc.getBoundingClientRect();
+            console.log('[DIAG] page-content rect: top=' + pcr.top.toFixed(0) + ' bottom=' + pcr.bottom.toFixed(0));
+          }
+          
+          // 🔍 强力诊断：查找所有 "undefined" 文本 + 定位来源元素
+          var allPages = document.querySelectorAll('[id^="page-"]');
+          var foundIssues = [];
+          for (var i = 0; i < allPages.length; i++) {
+            var p = allPages[i];
+            // 用 TreeWalker 遍历所有文本节点
+            var walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+            var node;
+            while (node = walker.nextNode()) {
+              if (/\bundefined\b/i.test(node.textContent)) {
+                var parentTag = node.parentElement ? node.parentElement.tagName : '?';
+                var parentId = node.parentElement ? (node.parentElement.id || '') : '';
+                var parentClass = node.parentElement ? (node.parentElement.className || '') : '';
+                var parentHTML = node.parentElement ? node.parentElement.outerHTML.substring(0, 200) : '';
+                foundIssues.push(
+                  p.id + ' → <' + parentTag + ' id="' + parentId + '" class="' + parentClass + '">' +
+                  ' text="' + node.textContent.trim().substring(0, 60) + '"' +
+                  ' | html=' + parentHTML
+                );
+              }
+            }
+          }
+          if (foundIssues.length > 0) {
+            console.warn('[DIAG] ⚠️ Found "undefined" in ' + foundIssues.length + ' places:');
+            for (var j = 0; j < foundIssues.length; j++) {
+              console.warn('[DIAG]   [' + (j+1) + '] ' + foundIssues[j]);
+            }
+          } else {
+            console.log('[DIAG] All pages clean, no "undefined" found ✓');
+          }
+        }, 500);
+      };
+    });
+  </script>
+</body>
+</html>
